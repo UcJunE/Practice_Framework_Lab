@@ -52,4 +52,56 @@ router.post("/create", async (req, res) => {
   });
 });
 
+// to parse in the existing data from the table before proceeed to updating
+router.get("/:poster_id/update", async (req, res) => {
+  //retrive the poster
+  const posterId = req.params.poster_id;
+  //how to retrive id?
+  const poster = await Poster.where({
+    id: posterId,
+  }).fetch({
+    require: true,
+  });
+  //Poster is a table name which is posters
+  const posterForm = createPosterForm();
+  //fill in the existing values from table
+  posterForm.fields.title.value = poster.get("title");
+  posterForm.fields.cost.value = poster.get("cost");
+  posterForm.fields.description.value = poster.get("description");
+  posterForm.fields.date.value = poster.get("date");
+  posterForm.fields.stock.value = poster.get("stock");
+  posterForm.fields.height.value = poster.get("height");
+  posterForm.fields.width.value = poster.get("width");
+
+  res.render("/posters/update", {
+    form: posterForm.toHTML(bootstrapField),
+    poster: poster.toJSON(),
+  });
+});
+
+//to update the form
+router.post("/:poster_id/update", async (req, res) => {
+  // 1st fecth the product that we wanna update
+  //get it from the main table
+  const poster = await Poster.where({ id: req.params.poster_id }).fetch({
+    require: true,
+  });
+
+  //process the form
+  const posterForm = createPosterForm();
+  posterForm.handle(req, {
+    success: async (form) => {
+      poster.set(form.data);
+      poster.save();
+      res.redirect("/posters");
+    },
+    error: async (form) => {
+      res.render("/posters/update", {
+        form: form.toHTML(bootstrapField),
+        poster: poster.toJson(),
+      });
+    },
+  });
+});
+
 module.exports = router; // #3 export out the router
