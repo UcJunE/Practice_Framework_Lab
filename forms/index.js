@@ -33,7 +33,7 @@ var bootstrapField = function (name, object) {
 //createProductForm function
 const createPosterForm = () => {
   return forms.create({
-    name: fields.string({
+    title: fields.string({
       required: true,
       errorAfterField: true,
       cssClasses: {
@@ -46,6 +46,7 @@ const createPosterForm = () => {
       cssClasses: {
         label: ["form-label"],
       },
+      validator: [validators.integer()],
     }),
     description: fields.string({
       required: true,
@@ -67,6 +68,7 @@ const createPosterForm = () => {
       cssClasses: {
         label: ["form-label"],
       },
+      validator: [validators.integer()],
     }),
     height: fields.number({
       required: true,
@@ -74,6 +76,7 @@ const createPosterForm = () => {
       cssClasses: {
         label: ["form-label"],
       },
+      validator: [validators.integer()],
     }),
     width: fields.number({
       required: true,
@@ -81,6 +84,7 @@ const createPosterForm = () => {
       cssClasses: {
         label: ["form-label"],
       },
+      validator: [validators.integer()],
     }),
   });
 };
