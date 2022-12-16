@@ -1,6 +1,6 @@
 const Bookshelf = require("bookshelf");
 
-const knew = require("knex")({
+const knex = require("knex")({
   client: "mysql",
   connection: {
     user: "foo",
