@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router(); // #1 - Create a new express Router
-const { Poster, Category } = require("../models");
+const { Poster, Category, Tag } = require("../models");
 //  #2 Add a new route to the Express router
 const { bootstrapField, createPosterForm } = require("../forms");
 const async = require("hbs/lib/async");
@@ -19,8 +19,18 @@ router.get("/", async (req, res) => {
 //to display the form
 router.get("/create", async (req, res) => {
   console.log("get route create form");
+
+  //getting all the categories and tag from its table
+  const allCategories = await Category.fetchAll().map((category) => {
+    return [category.get("id"), category.get("name")];
+  });
+
+  const allTags = await Tag.fetchAll().map((tag) => {
+    return [tag.get("id"), tag.get("name")];
+  });
+
   // inporting form setup
-  const posterForm = createPosterForm();
+  const posterForm = createPosterForm(allCategories, allTags);
   res.render("posters/create", {
     form: posterForm.toHTML(bootstrapField),
   });
