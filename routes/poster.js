@@ -1,13 +1,16 @@
 const express = require("express");
 const router = express.Router(); // #1 - Create a new express Router
-const { Poster } = require("../models");
+const { Poster, Category } = require("../models");
 //  #2 Add a new route to the Express router
 const { bootstrapField, createPosterForm } = require("../forms");
 const async = require("hbs/lib/async");
 
 // to get all the posters collection
 router.get("/", async (req, res) => {
-  let posters = await Poster.collection().fetch();
+  let posters = await Poster.collection().fetch({
+    withRelated: ["category"],
+  });
+
   res.render("posters/index", {
     posters: posters.toJSON(),
   });
@@ -25,20 +28,24 @@ router.get("/create", async (req, res) => {
 
 //to allow user to post data
 router.post("/create", async (req, res) => {
+  const allCategories = await Category.fetchAll().map((category) => {
+    return [category.get("id"), category.get("name")];
+  });
+
   const posterForm = createPosterForm();
   console.log("hello from create post");
   posterForm.handle(req, {
     success: async (form) => {
-      const poster = new Poster(); // this line is to create new instance based on the migration we setup
-      poster.set("title", form.data.title);
-      poster.set("cost", form.data.cost);
-      poster.set("description", form.data.description);
-      poster.set("date", form.data.date);
-      poster.set("stock", form.data.stock);
-      poster.set("height", form.data.height);
-      poster.set("width", form.data.width);
-      console.log(poster);
-      console.log(form.data);
+      const poster = new Poster(form.data); // this line is to create new instance based on the migration we setup
+      // poster.set("title", form.data.title);
+      // poster.set("cost", form.data.cost);
+      // poster.set("description", form.data.description);
+      // poster.set("date", form.data.date);
+      // poster.set("stock", form.data.stock);
+      // poster.set("height", form.data.height);
+      // poster.set("width", form.data.width);
+      // console.log(poster);
+      // console.log(form.data);
       //must always remember . after getting all the data. must remember to save it
       await poster.save();
       res.redirect("/posters");
@@ -57,16 +64,22 @@ router.get("/update/:poster_id", async (req, res) => {
   //retrive the poster
   const posterId = req.params.poster_id;
   // console.log("this is poster id :" + posterId);
-  // //how to retrive id?
+  //how to retrive id?
   const poster = await Poster.where({
     id: posterId,
   }).fetch({
     require: true,
   });
-  // //Poster is a table name which is posters
-  const posterForm = createPosterForm();
-  // //fill in the existing values from table
-  // // console.log(posterForm);
+
+  //fetch all the categories
+  const allCategories = await Category.fetchAll().map((category) => {
+    return [category.get("id"), category.get("name")];
+  });
+
+  //Poster is a table name which is posters
+  const posterForm = createPosterForm(allCategories);
+  //fill in the existing values from table
+  // console.log(posterForm);
   posterForm.fields.title.value = poster.get("title");
   posterForm.fields.cost.value = poster.get("cost");
   posterForm.fields.description.value = poster.get("description");
@@ -74,8 +87,9 @@ router.get("/update/:poster_id", async (req, res) => {
   posterForm.fields.stock.value = poster.get("stock");
   posterForm.fields.height.value = poster.get("height");
   posterForm.fields.width.value = poster.get("width");
+  posterForm.fields.category_id.value = poster.get("category_id");
 
-  // //why the form dint even appear on update route?????????
+  //why the form dint even appear on update route?????????
   res.render("posters/update", {
     form: posterForm.toHTML(bootstrapField),
     poster: poster.toJSON(),
@@ -84,6 +98,10 @@ router.get("/update/:poster_id", async (req, res) => {
 
 //to update the form
 router.post("/update/:poster_id", async (req, res) => {
+  const allCategories = await Category.fetchAll().map((category) => {
+    return [category.get("id"), category.get("name")];
+  });
+
   // 1st fetch the product that we wanna update
   //get it from the main table
   const poster = await Poster.where({
@@ -93,7 +111,7 @@ router.post("/update/:poster_id", async (req, res) => {
   });
 
   // process the form
-  const posterForm = createPosterForm();
+  const posterForm = createPosterForm(allCategories);
   posterForm.handle(req, {
     success: async (form) => {
       poster.set(form.data);

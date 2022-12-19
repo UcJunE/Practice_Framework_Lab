@@ -3,6 +3,8 @@ const forms = require("forms");
 // create some shortcuts
 const fields = forms.fields;
 const validators = forms.validators;
+//widget must be imported - mainly for dropdown
+const widgets = forms.widgets;
 
 var bootstrapField = function (name, object) {
   if (!Array.isArray(object.widget.classes)) {
@@ -31,7 +33,7 @@ var bootstrapField = function (name, object) {
 // top part meant for import in the forms module and implementation on bootstrapfield helper + format form
 
 //createProductForm function
-const createPosterForm = () => {
+const createPosterForm = (categories) => {
   return forms.create({
     title: fields.string({
       required: true,
@@ -85,6 +87,17 @@ const createPosterForm = () => {
         label: ["form-label"],
       },
       validator: [validators.integer()],
+    }),
+    category_id: fields.string({
+      //what is label ? change the name of the category id to category
+      label: "Category",
+      required: true,
+      errorAfterField: true,
+      cssClasses: {
+        label: ["form-label"],
+      },
+      widget: widgets.select(),
+      choices: categories,
     }),
   });
 };
