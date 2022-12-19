@@ -5,6 +5,16 @@ const Poster = bookshelf.model("Poster", {
   category() {
     return this.belongTo("Category");
   },
+  tags() {
+    return this.belongToMany("Tag");
+  },
+});
+
+const Tag = bookshelf.model("Tag", {
+  tableName: "tags",
+  product() {
+    return this.belongToMany("Product");
+  },
 });
 
 const Category = bookshelf.model("Category", {
@@ -13,4 +23,4 @@ const Category = bookshelf.model("Category", {
     return this.hasMany("Poster");
   },
 });
-module.exports = { Poster, Category };
+module.exports = { Poster, Category, Tag };
