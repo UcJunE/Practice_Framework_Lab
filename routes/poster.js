@@ -15,7 +15,7 @@ router.get("/", async (req, res) => {
 
 //to display the form
 router.get("/create", async (req, res) => {
-  console.log("get create");
+  console.log("get route create form");
   // inporting form setup
   const posterForm = createPosterForm();
   res.render("posters/create", {
@@ -26,7 +26,7 @@ router.get("/create", async (req, res) => {
 //to allow user to post data
 router.post("/create", async (req, res) => {
   const posterForm = createPosterForm();
-  console.log("hello");
+  console.log("hello from create post");
   posterForm.handle(req, {
     success: async (form) => {
       const poster = new Poster(); // this line is to create new instance based on the migration we setup
@@ -53,18 +53,20 @@ router.post("/create", async (req, res) => {
 });
 
 // to parse in the existing data from the table before proceeed to updating
-router.get("/:poster_id/update", async (req, res) => {
+router.get("/update/:poster_id", async (req, res) => {
   //retrive the poster
   const posterId = req.params.poster_id;
-  //how to retrive id?
+  // console.log("this is poster id :" + posterId);
+  // //how to retrive id?
   const poster = await Poster.where({
     id: posterId,
   }).fetch({
     require: true,
   });
-  //Poster is a table name which is posters
+  // //Poster is a table name which is posters
   const posterForm = createPosterForm();
-  //fill in the existing values from table
+  // //fill in the existing values from table
+  // // console.log(posterForm);
   posterForm.fields.title.value = poster.get("title");
   posterForm.fields.cost.value = poster.get("cost");
   posterForm.fields.description.value = poster.get("description");
@@ -73,21 +75,24 @@ router.get("/:poster_id/update", async (req, res) => {
   posterForm.fields.height.value = poster.get("height");
   posterForm.fields.width.value = poster.get("width");
 
-  res.render("/posters/update", {
+  // //why the form dint even appear on update route?????????
+  res.render("posters/update", {
     form: posterForm.toHTML(bootstrapField),
     poster: poster.toJSON(),
   });
 });
 
 //to update the form
-router.post("/:poster_id/update", async (req, res) => {
-  // 1st fecth the product that we wanna update
+router.post("/update/:poster_id", async (req, res) => {
+  // 1st fetch the product that we wanna update
   //get it from the main table
-  const poster = await Poster.where({ id: req.params.poster_id }).fetch({
+  const poster = await Poster.where({
+    id: req.params.poster_id,
+  }).fetch({
     require: true,
   });
 
-  //process the form
+  // process the form
   const posterForm = createPosterForm();
   posterForm.handle(req, {
     success: async (form) => {
@@ -96,12 +101,35 @@ router.post("/:poster_id/update", async (req, res) => {
       res.redirect("/posters");
     },
     error: async (form) => {
-      res.render("/posters/update", {
+      res.render("posters/update", {
         form: form.toHTML(bootstrapField),
-        poster: poster.toJson(),
+        poster: poster.toJSON(),
       });
     },
   });
+});
+
+router.get("/delete/:poster_id", async (req, res) => {
+  //fetcth the product that we wanted to del
+  const poster = await Poster.where({
+    id: req.params.poster_id,
+  }).fetch({
+    require: true,
+  });
+  res.render("posters/delete", {
+    poster: poster.toJSON,
+  });
+});
+
+router.post("/delete/:poster_id", async (req, res) => {
+  //fetch id 1st
+  const poster = await Poster.where({
+    id: req.params.poster_id,
+  }).fetch({
+    require: true,
+  });
+  await poster.destroy();
+  res.redirect("/posters");
 });
 
 module.exports = router; // #3 export out the router
