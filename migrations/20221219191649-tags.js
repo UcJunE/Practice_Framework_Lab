@@ -18,13 +18,13 @@ exports.up = function (db) {
   return db.createTable("tags", {
     id: {
       type: "int",
-      primaryKey: true,
       unsigned: true,
+      primaryKey: true,
       autoIncrement: true,
-      name: {
-        type: "string",
-        length: 100,
-      },
+    },
+    name: {
+      type: "string",
+      length: 100,
     },
   });
 };

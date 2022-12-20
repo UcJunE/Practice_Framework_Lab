@@ -3,17 +3,17 @@ const bookshelf = require("../bookshelf");
 const Poster = bookshelf.model("Poster", {
   tableName: "posters",
   category() {
-    return this.belongTo("Category");
+    return this.belongsTo("Category");
   },
   tags() {
-    return this.belongToMany("Tag");
+    return this.belongsToMany("Tag");
   },
 });
 
 const Tag = bookshelf.model("Tag", {
   tableName: "tags",
   product() {
-    return this.belongToMany("Product");
+    return this.belongsToMany("Product");
   },
 });
 

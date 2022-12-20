@@ -29,7 +29,7 @@ router.get("/create", async (req, res) => {
     return [tag.get("id"), tag.get("name")];
   });
 
-  // inporting form setup
+  // inporting form setup and pass in data to form
   const posterForm = createPosterForm(allCategories, allTags);
   res.render("posters/create", {
     form: posterForm.toHTML(bootstrapField),
@@ -46,7 +46,7 @@ router.post("/create", async (req, res) => {
   console.log("hello from create post");
   posterForm.handle(req, {
     success: async (form) => {
-      const poster = new Poster(form.data); // this line is to create new instance based on the migration we setup
+      // const poster = new Poster(form.data); // this line is to create new instance based on the migration we setup
       // poster.set("title", form.data.title);
       // poster.set("cost", form.data.cost);
       // poster.set("description", form.data.description);
@@ -56,8 +56,16 @@ router.post("/create", async (req, res) => {
       // poster.set("width", form.data.width);
       // console.log(poster);
       // console.log(form.data);
+      let { tags, ...posterData } = form.data;
+      const poster = new Poster(posterData);
       //must always remember . after getting all the data. must remember to save it
+
       await poster.save();
+      //what is attach ????
+      // attach only used when  join many to many relation
+      if (tags) {
+        await poster.tags().attach(tags.split(","));
+      }
       res.redirect("/posters");
     },
     " error": async (form) => {
@@ -76,9 +84,16 @@ router.get("/update/:poster_id", async (req, res) => {
   // console.log("this is poster id :" + posterId);
   //how to retrive id?
   const poster = await Poster.where({
-    id: posterId,
+    id: parseInt(posterId),
   }).fetch({
     require: true,
+    withRelated: ["tags"],
+    //with related sort of joining the table
+  });
+
+  //fetch all the tags
+  const allTags = await Tag.fetchAll().map((tag) => {
+    return [tag.get("id"), tag.get("name")];
   });
 
   //fetch all the categories
@@ -87,7 +102,7 @@ router.get("/update/:poster_id", async (req, res) => {
   });
 
   //Poster is a table name which is posters
-  const posterForm = createPosterForm(allCategories);
+  const posterForm = createPosterForm(allCategories, allTags);
   //fill in the existing values from table
   // console.log(posterForm);
   posterForm.fields.title.value = poster.get("title");
@@ -98,6 +113,10 @@ router.get("/update/:poster_id", async (req, res) => {
   posterForm.fields.height.value = poster.get("height");
   posterForm.fields.width.value = poster.get("width");
   posterForm.fields.category_id.value = poster.get("category_id");
+
+  //fill in the multi- select for the tags
+  let selectedTags = await poster.related("tags").pluck("id");
+  posterForm.fields.tags.value = selectedTags;
 
   //why the form dint even appear on update route?????????
   res.render("posters/update", {
@@ -112,23 +131,48 @@ router.post("/update/:poster_id", async (req, res) => {
     return [category.get("id"), category.get("name")];
   });
 
+  //fetch all the tags
+  const allTags = await Tag.fetchAll().map((tag) => {
+    return [tag.get("id"), tag.get("name")];
+  });
+
   // 1st fetch the product that we wanna update
   //get it from the main table
   const poster = await Poster.where({
     id: req.params.poster_id,
   }).fetch({
     require: true,
+    withRelated: ["tags"],
   });
 
   // process the form
-  const posterForm = createPosterForm(allCategories);
+  const posterForm = createPosterForm(allCategories, allTags);
   posterForm.handle(req, {
     success: async (form) => {
-      poster.set(form.data);
+      let { tags, ...productData } = form.data;
+      poster.set(productData);
       poster.save();
+
+      //update the tags
+      //how da hell this split get the id ???
+      let tagIds = tags.split(",");
+      console.log("This is the tagIds" + tagIds);
+      let existingTagIds = await poster.related("tag").pluck("id");
+
+      // remove all tags that aren't selected anymore
+      let toRemove = existingTagIds.filter(
+        (id) => tagIds.includes(id) === false
+      );
+
+      await poster.tags().detach(toRemove);
+
+      // add in all the tags selected in the form
+      await poster.tags().attach(tagIds);
+
       res.redirect("/posters");
     },
     error: async (form) => {
+      // console.log(form.data);
       res.render("posters/update", {
         form: form.toHTML(bootstrapField),
         poster: poster.toJSON(),
